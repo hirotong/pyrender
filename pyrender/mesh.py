@@ -115,10 +115,7 @@ class Mesh(object):
     def is_transparent(self):
         """bool : If True, the mesh is partially-transparent.
         """
-        for p in self.primitives:
-            if p.is_transparent:
-                return True
-        return False
+        return any(p.is_transparent for p in self.primitives)
 
     @staticmethod
     def from_points(points, colors=None, normals=None,
@@ -150,8 +147,7 @@ class Mesh(object):
             mode=GLTF.POINTS,
             poses=poses
         )
-        mesh = Mesh(primitives=[primitive], is_visible=is_visible)
-        return mesh
+        return Mesh(primitives=[primitive], is_visible=is_visible)
 
     @staticmethod
     def from_trimesh(mesh, material=None, is_visible=True,
@@ -187,8 +183,7 @@ class Mesh(object):
         elif isinstance(mesh, trimesh.Trimesh):
             meshes = [mesh]
         else:
-            raise TypeError('Expected a Trimesh or a list, got a {}'
-                            .format(type(mesh)))
+            raise TypeError(f'Expected a Trimesh or a list, got a {type(mesh)}')
 
         primitives = []
         for m in meshes:

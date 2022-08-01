@@ -32,7 +32,7 @@ class FontCache(object):
             _, font_name = os.path.split(font_name)
             font_name, _ = os.path.split(font_name)
         else:
-            font_filename = os.path.join(self.font_dir, font_name) + '.ttf'
+            font_filename = f'{os.path.join(self.font_dir, font_name)}.ttf'
 
         cid = OpenGL.contextdata.getContext()
         key = (cid, font_name, int(font_pt))
@@ -76,7 +76,7 @@ class Font(object):
         self._face.set_pixel_sizes(0, font_pt)
         self._character_map = {}
 
-        for i in range(0, 128):
+        for i in range(128):
 
             # Generate texture
             face = self._face

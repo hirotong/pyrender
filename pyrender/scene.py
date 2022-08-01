@@ -35,11 +35,7 @@ class Scene(object):
                  ambient_light=None,
                  name=None):
 
-        if bg_color is None:
-            bg_color = np.ones(4)
-        else:
-            bg_color = format_color_vector(bg_color, 4)
-
+        bg_color = np.ones(4) if bg_color is None else format_color_vector(bg_color, 4)
         if ambient_light is None:
             ambient_light = np.zeros(3)
 
@@ -106,10 +102,7 @@ class Scene(object):
 
     @bg_color.setter
     def bg_color(self, value):
-        if value is None:
-            value = np.ones(4)
-        else:
-            value = format_color_vector(value, 4)
+        value = np.ones(4) if value is None else format_color_vector(value, 4)
         self._bg_color = value
 
     @property
@@ -120,17 +113,14 @@ class Scene(object):
 
     @ambient_light.setter
     def ambient_light(self, value):
-        if value is None:
-            value = np.zeros(3)
-        else:
-            value = format_color_vector(value, 3)
+        value = np.zeros(3) if value is None else format_color_vector(value, 3)
         self._ambient_light = value
 
     @property
     def meshes(self):
         """set of :class:`Mesh` : The meshes in the scene.
         """
-        return set([n.mesh for n in self.mesh_nodes])
+        return {n.mesh for n in self.mesh_nodes}
 
     @property
     def mesh_nodes(self):
@@ -155,7 +145,7 @@ class Scene(object):
     def point_lights(self):
         """set of :class:`PointLight` : The point lights in the scene.
         """
-        return set([n.light for n in self.point_light_nodes])
+        return {n.light for n in self.point_light_nodes}
 
     @property
     def point_light_nodes(self):
@@ -167,7 +157,7 @@ class Scene(object):
     def spot_lights(self):
         """set of :class:`SpotLight` : The spot lights in the scene.
         """
-        return set([n.light for n in self.spot_light_nodes])
+        return {n.light for n in self.spot_light_nodes}
 
     @property
     def spot_light_nodes(self):
@@ -180,7 +170,7 @@ class Scene(object):
         """set of :class:`DirectionalLight` : The directional lights in
         the scene.
         """
-        return set([n.light for n in self.directional_light_nodes])
+        return {n.light for n in self.directional_light_nodes}
 
     @property
     def directional_light_nodes(self):
@@ -192,7 +182,7 @@ class Scene(object):
     def cameras(self):
         """set of :class:`Camera` : The cameras in the scene.
         """
-        return set([n.camera for n in self.camera_nodes])
+        return {n.camera for n in self.camera_nodes}
 
     @property
     def camera_nodes(self):
@@ -226,7 +216,7 @@ class Scene(object):
                 corners_local = trimesh.bounds.corners(mesh.bounds)
                 corners_world = pose[:3,:3].dot(corners_local.T).T + pose[:3,3]
                 corners.append(corners_world)
-            if len(corners) == 0:
+            if not corners:
                 self._bounds = np.zeros((2,3))
             else:
                 corners = np.vstack(corners)
@@ -288,11 +278,9 @@ class Scene(object):
         if parent_node is None and parent_name is not None:
             parent_nodes = self.get_nodes(name=parent_name)
             if len(parent_nodes) == 0:
-                raise ValueError('No parent node with name {} found'
-                                 .format(parent_name))
+                raise ValueError(f'No parent node with name {parent_name} found')
             elif len(parent_nodes) > 1:
-                raise ValueError('More than one parent node with name {} found'
-                                 .format(parent_name))
+                raise ValueError(f'More than one parent node with name {parent_name} found')
             parent_node = list(parent_nodes)[0]
 
         self.add_node(node, parent_node=parent_node)
@@ -320,10 +308,7 @@ class Scene(object):
             The nodes that match all query terms.
         """
         if node is not None:
-            if node in self.nodes:
-                return set([node])
-            else:
-                return set()
+            return {node} if node in self.nodes else set()
         nodes = set(self.nodes)
         if name is not None:
             matches = set()

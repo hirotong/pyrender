@@ -176,8 +176,8 @@ class Material(object):
 
     @alphaMode.setter
     def alphaMode(self, value):
-        if value not in set(['OPAQUE', 'MASK', 'BLEND']):
-            raise ValueError('Invalid alpha mode {}'.format(value))
+        if value not in {'OPAQUE', 'MASK', 'BLEND'}:
+            raise ValueError(f'Invalid alpha mode {value}')
         self._alphaMode = value
 
     @property
@@ -267,17 +267,15 @@ class Material(object):
         all_textures = [
             self.normalTexture, self.occlusionTexture, self.emissiveTexture
         ]
-        textures = set([t for t in all_textures if t is not None])
-        return textures
+        return {t for t in all_textures if t is not None}
 
     def _format_texture(self, texture, target_channels='RGB'):
         """Format a texture as a float32 np array.
         """
         if isinstance(texture, Texture) or texture is None:
             return texture
-        else:
-            source = format_texture_source(texture, target_channels)
-            return Texture(source=source, source_channels=target_channels)
+        source = format_texture_source(texture, target_channels)
+        return Texture(source=source, source_channels=target_channels)
 
 
 class MetallicRoughnessMaterial(Material):
@@ -482,15 +480,15 @@ class MetallicRoughnessMaterial(Material):
     def _compute_transparency(self):
         if self.alphaMode == 'OPAQUE':
             return False
-        cutoff = self.alphaCutoff
-        if self.alphaMode == 'BLEND':
-            cutoff = 1.0
+        cutoff = 1.0 if self.alphaMode == 'BLEND' else self.alphaCutoff
         if self.baseColorFactor[3] < cutoff:
             return True
-        if (self.baseColorTexture is not None and
-                self.baseColorTexture.is_transparent(cutoff)):
-            return True
-        return False
+        return bool(
+            (
+                self.baseColorTexture is not None
+                and self.baseColorTexture.is_transparent(cutoff)
+            )
+        )
 
     def _compute_textures(self):
         textures = super(MetallicRoughnessMaterial, self)._compute_textures()
@@ -689,15 +687,15 @@ class SpecularGlossinessMaterial(Material):
     def _compute_transparency(self):
         if self.alphaMode == 'OPAQUE':
             return False
-        cutoff = self.alphaCutoff
-        if self.alphaMode == 'BLEND':
-            cutoff = 1.0
+        cutoff = 1.0 if self.alphaMode == 'BLEND' else self.alphaCutoff
         if self.diffuseFactor[3] < cutoff:
             return True
-        if (self.diffuseTexture is not None and
-                self.diffuseTexture.is_transparent(cutoff)):
-            return True
-        return False
+        return bool(
+            (
+                self.diffuseTexture is not None
+                and self.diffuseTexture.is_transparent(cutoff)
+            )
+        )
 
     def _compute_textures(self):
         textures = super(SpecularGlossinessMaterial, self)._compute_textures()

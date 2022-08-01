@@ -87,9 +87,8 @@ class Light(object):
 
     @shadow_texture.setter
     def shadow_texture(self, value):
-        if self._shadow_texture is not None:
-            if self._shadow_texture._in_context():
-                self._shadow_texture.delete()
+        if self._shadow_texture is not None and self._shadow_texture._in_context():
+            self._shadow_texture.delete()
         self._shadow_texture = value
 
     @abc.abstractmethod

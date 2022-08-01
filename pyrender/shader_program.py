@@ -112,12 +112,13 @@ class ShaderProgram(object):
     def _add_to_context(self):
         if self._program_id is not None:
             raise ValueError('Shader program already in context')
-        shader_ids = []
+        shader_ids = [
+            gl_shader_utils.compileShader(
+                self._load(self.vertex_shader), GL_VERTEX_SHADER
+            )
+        ]
 
-        # Load vert shader
-        shader_ids.append(gl_shader_utils.compileShader(
-            self._load(self.vertex_shader), GL_VERTEX_SHADER)
-        )
+
         # Load frag shader
         shader_ids.append(gl_shader_utils.compileShader(
             self._load(self.fragment_shader), GL_FRAGMENT_SHADER)
@@ -156,16 +157,10 @@ class ShaderProgram(object):
             text = f.read()
 
         def ifdef(matchobj):
-            if matchobj.group(1) in self.defines:
-                return '#if 1'
-            else:
-                return '#if 0'
+            return '#if 1' if matchobj.group(1) in self.defines else '#if 0'
 
         def ifndef(matchobj):
-            if matchobj.group(1) in self.defines:
-                return '#if 0'
-            else:
-                return '#if 1'
+            return '#if 0' if matchobj.group(1) in self.defines else '#if 1'
 
         ifdef_regex = re.compile(
             '#ifdef\\s+([a-zA-Z_][a-zA-Z_0-9]*)\\s*$', re.MULTILINE
@@ -218,7 +213,7 @@ class ShaderProgram(object):
             loc = glGetUniformLocation(self._program_id, name)
 
             if loc == -1:
-                raise ValueError('Invalid shader variable: {}'.format(name))
+                raise ValueError(f'Invalid shader variable: {name}')
 
             if isinstance(value, np.ndarray):
                 # DEBUG

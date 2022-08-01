@@ -227,9 +227,8 @@ class Primitive(object):
         # Create default material
         if value is None:
             value = MetallicRoughnessMaterial()
-        else:
-            if not isinstance(value, Material):
-                raise TypeError('Object material must be of type Material')
+        elif not isinstance(value, Material):
+            raise TypeError('Object material must be of type Material')
         self._material = value
 
     @property
@@ -269,8 +268,7 @@ class Primitive(object):
             if value.ndim == 2:
                 value = value[np.newaxis,:,:]
             if value.shape[1] != 4 or value.shape[2] != 4:
-                raise ValueError('Pose matrices must be of shape (n,4,4), '
-                                 'got {}'.format(value.shape))
+                raise ValueError(f'Pose matrices must be of shape (n,4,4), got {value.shape}')
         self._poses = value
         self._bounds = None
 
@@ -402,7 +400,7 @@ class Primitive(object):
             pose_data, GL_STATIC_DRAW
         )
 
-        for i in range(0, 4):
+        for i in range(4):
             idx = i + len(attr_sizes)
             glEnableVertexAttribArray(idx)
             glVertexAttribPointer(
@@ -463,9 +461,8 @@ class Primitive(object):
             return True
         if self._is_transparent is None:
             self._is_transparent = False
-            if self.color_0 is not None:
-                if np.any(self._color_0[:,3] != 1.0):
-                    self._is_transparent = True
+            if self.color_0 is not None and np.any(self._color_0[:, 3] != 1.0):
+                self._is_transparent = True
         return self._is_transparent
 
     def _compute_buf_flags(self):

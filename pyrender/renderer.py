@@ -38,11 +38,7 @@ class Renderer(object):
     """
 
     def __init__(self, viewport_width, viewport_height, point_size=1.0):
-        self.dpscale = 1
-        # Scaling needed on retina displays
-        if sys.platform == 'darwin':
-            self.dpscale = 2
-
+        self.dpscale = 2 if sys.platform == 'darwin' else 1
         self.viewport_width = viewport_width
         self.viewport_height = viewport_height
         self.point_size = point_size
@@ -357,10 +353,12 @@ class Renderer(object):
                 if node not in seg_node_map:
                     continue
                 color = seg_node_map[node]
-                if not isinstance(color, (list, tuple, np.ndarray)):
-                    color = np.repeat(color, 3)
-                else:
-                    color = np.asanyarray(color)
+                color = (
+                    np.asanyarray(color)
+                    if isinstance(color, (list, tuple, np.ndarray))
+                    else np.repeat(color, 3)
+                )
+
                 color = color / 255.0
 
             for primitive in mesh.primitives:
@@ -600,11 +598,7 @@ class Renderer(object):
             glEnable(GL_PROGRAM_POINT_SIZE)
             glPointSize(self.point_size)
 
-        # Render mesh
-        n_instances = 1
-        if primitive.poses is not None:
-            n_instances = len(primitive.poses)
-
+        n_instances = len(primitive.poses) if primitive.poses is not None else 1
         if primitive.indices is not None:
             glDrawElementsInstanced(
                 primitive.mode, primitive.indices.size, GL_UNSIGNED_INT,
@@ -651,48 +645,46 @@ class Renderer(object):
             if isinstance(light, PointLight):
                 if plc == max_n_lights[2]:
                     continue
-                b = 'point_lights[{}].'.format(plc)
+                b = f'point_lights[{plc}].'
                 plc += 1
                 shadow = bool(flags & RenderFlags.SHADOWS_POINT)
-                program.set_uniform(b + 'position', position)
+                program.set_uniform(f'{b}position', position)
             elif isinstance(light, SpotLight):
                 if slc == max_n_lights[1]:
                     continue
-                b = 'spot_lights[{}].'.format(slc)
+                b = f'spot_lights[{slc}].'
                 slc += 1
                 shadow = bool(flags & RenderFlags.SHADOWS_SPOT)
                 las = 1.0 / max(0.001, np.cos(light.innerConeAngle) -
                                 np.cos(light.outerConeAngle))
                 lao = -np.cos(light.outerConeAngle) * las
-                program.set_uniform(b + 'direction', direction)
-                program.set_uniform(b + 'position', position)
-                program.set_uniform(b + 'light_angle_scale', las)
-                program.set_uniform(b + 'light_angle_offset', lao)
+                program.set_uniform(f'{b}direction', direction)
+                program.set_uniform(f'{b}position', position)
+                program.set_uniform(f'{b}light_angle_scale', las)
+                program.set_uniform(f'{b}light_angle_offset', lao)
             else:
                 if dlc == max_n_lights[0]:
                     continue
-                b = 'directional_lights[{}].'.format(dlc)
+                b = f'directional_lights[{dlc}].'
                 dlc += 1
                 shadow = bool(flags & RenderFlags.SHADOWS_DIRECTIONAL)
-                program.set_uniform(b + 'direction', direction)
+                program.set_uniform(f'{b}direction', direction)
 
-            program.set_uniform(b + 'color', light.color)
-            program.set_uniform(b + 'intensity', light.intensity)
+            program.set_uniform(f'{b}color', light.color)
+            program.set_uniform(f'{b}intensity', light.intensity)
             # if light.range is not None:
             #     program.set_uniform(b + 'range', light.range)
             # else:
             #     program.set_uniform(b + 'range', 0)
 
             if shadow:
-                self._bind_texture(light.shadow_texture,
-                                   b + 'shadow_map', program)
-                if not isinstance(light, PointLight):
-                    V, P = self._get_light_cam_matrices(scene, n, flags)
-                    program.set_uniform(b + 'light_matrix', P.dot(V))
-                else:
+                self._bind_texture(light.shadow_texture, f'{b}shadow_map', program)
+                if isinstance(light, PointLight):
                     raise NotImplementedError(
                         'Point light shadows not implemented'
                     )
+                V, P = self._get_light_cam_matrices(scene, n, flags)
+                program.set_uniform(f'{b}light_matrix', P.dot(V))
 
     def _sorted_mesh_nodes(self, scene):
         cam_loc = scene.get_pose(scene.main_camera_node)[:3,3]
@@ -1263,7 +1255,6 @@ class Renderer(object):
         w = self.viewport_width
         h = self.viewport_height
 
-        num_nodes = len(light_nodes)
         viewport_dims = {
             (0, 2): [0, h // 2, w // 2, h],
             (1, 2): [w // 2, h // 2, w, h],
@@ -1277,6 +1268,7 @@ class Renderer(object):
         }
 
         if tile:
+            num_nodes = len(light_nodes)
             for i, ln in enumerate(light_nodes):
                 light = ln.light
 
@@ -1295,7 +1287,7 @@ class Renderer(object):
             glViewport(*viewport_dims[(i, num_nodes + 1)])
             self._forward_pass_no_reset(scene, flags)
         else:
-            for i, ln in enumerate(light_nodes):
+            for ln in light_nodes:
                 light = ln.light
 
                 if light.shadow_texture is None:

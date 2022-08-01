@@ -10,9 +10,7 @@ from setuptools import setup
 exec(open('pyrender/version.py').read())
 
 def get_imageio_dep():
-    if sys.version[0] == "2":
-        return 'imageio<=2.6.1'
-    return 'imageio'
+    return 'imageio<=2.6.1' if sys.version[0] == "2" else 'imageio'
 
 requirements = [
     'freetype-py',                # For font loading

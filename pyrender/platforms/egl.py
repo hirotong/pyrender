@@ -33,8 +33,7 @@ def _get_egl_func(func_name, res_type, *arg_types):
 
     proto = ctypes.CFUNCTYPE(res_type)
     proto.argtypes = arg_types
-    func = proto(address)
-    return func
+    return proto(address)
 
 
 def _get_egl_struct(struct_name):
@@ -68,10 +67,7 @@ def query_devices():
 
 def get_default_device():
     # Fall back to not using query extension.
-    if _eglQueryDevicesEXT is None:
-        return EGLDevice(None)
-
-    return query_devices()[0]
+    return EGLDevice(None) if _eglQueryDevicesEXT is None else query_devices()[0]
 
 
 def get_device_by_index(device_id):
@@ -80,7 +76,7 @@ def get_device_by_index(device_id):
 
     devices = query_devices()
     if device_id >= len(devices):
-        raise ValueError('Invalid device ID ({})'.format(device_id, len(devices)))
+        raise ValueError(f'Invalid device ID ({device_id})')
     return devices[device_id]
 
 
@@ -101,13 +97,10 @@ class EGLDevice:
             return 'default'
 
         name = _eglQueryDeviceStringEXT(self._display, EGL_DRM_DEVICE_FILE_EXT)
-        if name is None:
-            return None
-
-        return name.decode('ascii')
+        return None if name is None else name.decode('ascii')
 
     def __repr__(self):
-        return "<EGLDevice(name={})>".format(self.name)
+        return f"<EGLDevice(name={self.name})>"
 
 
 class EGLPlatform(Platform):

@@ -152,9 +152,12 @@ class Texture(object):
         """
         if self._is_transparent is None:
             self._is_transparent = False
-            if self.source_channels == 'RGBA' and self.source is not None:
-                if np.any(self.source[:,:,3] < cutoff):
-                    self._is_transparent = True
+            if (
+                self.source_channels == 'RGBA'
+                and self.source is not None
+                and np.any(self.source[:, :, 3] < cutoff)
+            ):
+                self._is_transparent = True
         return self._is_transparent
 
     def delete(self):
@@ -173,7 +176,7 @@ class Texture(object):
         fmt = GL_DEPTH_COMPONENT
         if self.source_channels == 'R':
             fmt = GL_RED
-        elif self.source_channels == 'RG' or self.source_channels == 'GB':
+        elif self.source_channels in ['RG', 'GB']:
             fmt = GL_RG
         elif self.source_channels == 'RGB':
             fmt = GL_RGB
@@ -205,21 +208,19 @@ class Texture(object):
             glTexParameteri(
                 self.tex_type, GL_TEXTURE_MAG_FILTER, self.sampler.magFilter
             )
+        elif self.source is None:
+            glTexParameteri(self.tex_type, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         else:
-            if self.source is not None:
-                glTexParameteri(self.tex_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            else:
-                glTexParameteri(self.tex_type, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+            glTexParameteri(self.tex_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         if self.sampler.minFilter is not None:
             glTexParameteri(
                 self.tex_type, GL_TEXTURE_MIN_FILTER, self.sampler.minFilter
             )
-        else:
-            if self.source is not None:
-                glTexParameteri(self.tex_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-            else:
-                glTexParameteri(self.tex_type, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        elif self.source is None:
+            glTexParameteri(self.tex_type, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
+        else:
+            glTexParameteri(self.tex_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
         glTexParameteri(self.tex_type, GL_TEXTURE_WRAP_S, self.sampler.wrapS)
         glTexParameteri(self.tex_type, GL_TEXTURE_WRAP_T, self.sampler.wrapT)
         border_color = 255 * np.ones(4).astype(np.uint8)

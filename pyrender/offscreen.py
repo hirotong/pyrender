@@ -86,11 +86,14 @@ class OffscreenRenderer(object):
         self._platform.make_current()
         # If platform does not support dynamically-resizing framebuffers,
         # destroy it and restart it
-        if (self._platform.viewport_height != self.viewport_height or
-                self._platform.viewport_width != self.viewport_width):
-            if not self._platform.supports_framebuffers():
-                self.delete()
-                self._create()
+        if (
+            (
+                self._platform.viewport_height != self.viewport_height
+                or self._platform.viewport_width != self.viewport_width
+            )
+        ) and not self._platform.supports_framebuffers():
+            self.delete()
+            self._create()
 
         self._platform.make_current()
         self._renderer.viewport_width = self.viewport_width
@@ -143,9 +146,10 @@ class OffscreenRenderer(object):
             self._platform = OSMesaPlatform(self.viewport_width,
                                             self.viewport_height)
         else:
-            raise ValueError('Unsupported PyOpenGL platform: {}'.format(
-                os.environ['PYOPENGL_PLATFORM']
-            ))
+            raise ValueError(
+                f"Unsupported PyOpenGL platform: {os.environ['PYOPENGL_PLATFORM']}"
+            )
+
         self._platform.init_context()
         self._platform.make_current()
         self._renderer = Renderer(self.viewport_width, self.viewport_height)
